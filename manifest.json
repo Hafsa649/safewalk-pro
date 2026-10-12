@@ -1,0 +1,15 @@
+{
+  "name": "SafeWalk Pro - Women Safety",
+  "short_name": "SafeWalk Pro",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fce7f3",
+  "theme_color": "#a855f7",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3064/3064197.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SafeWalk Pro</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#a855f7">
+<style>
+body{margin:0;font-family:sans-serif;background:#fce7f3;display:flex;justify-content:center;align-items:center;min-height:100vh;padding:20px 0}
+.card{background:white;width:90%;max-width:380px;padding:25px;border-radius:30px;text-align:center;box-shadow:0 10px 25px rgba(0,0,0,0.1)}
+h1{color:#6d28d9}.sos-btn{width:160px;height:160px;background:#ef4444;border-radius:50%;border:none;color:white;font-size:40px;font-weight:bold;margin:15px 0;cursor:pointer}
+#startScreen{position:fixed;top:0;left:0;width:100%;height:100%;background:#6d28d9;color:white;font-size:26px;z-index:9999;border:none;display:flex;flex-direction:column;justify-content:center;align-items:center}
+.voice-btn,.location-btn,.call-btn,.fake-btn,.timer-btn{width:100%;color:white;border:none;padding:13px;border-radius:14px;font-weight:bold;margin-top:10px;font-size:15px;cursor:pointer}
+.voice-btn{background:#7c3aed}.location-btn{background:#8b5cf6}.call-btn{background:#10b981}.fake-btn{background:#f59e0b}.timer-btn{background:#ec4899}
+.input-box{width:100%;padding:12px;border:2px solid #e9d5ff;border-radius:10px;text-align:center;margin-bottom:5px;box-sizing:border-box}
+#fakeCallScreen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#111;color:white;z-index:10000;flex-direction:column;justify-content:center;align-items:center}
+</style>
+</head>
+<body>
+<button id="startScreen">💜 SafeWalk Pro Tap Karein<br><span style="font-size:16px">App Bolna Shuru Karegi 🎤</span></button>
+<div id="fakeCallScreen"><p>Incoming Call...</p><h2>👮 Papa Jaan</h2><p style="font-size:80px">📞</p><div style="display:flex;gap:40px"><button onclick="endFakeCall()" style="background:#ef4444;width:70px;height:70px;border-radius:50%;border:none;font-size:30px">📵</button><button onclick="endFakeCall()" style="background:#10b981;width:70px;height:70px;border-radius:50%;border:none;font-size:30px">📞</button></div></div>
+<div class="card">
+<h1>SafeWalk Pro 💜</h1><p>Women Safety - Advanced</p>
+<input id="emergencyInput" class="input-box" type="tel" placeholder="Emergency Number: 0300xxxxxxx">
+<button class="location-btn" style="background:#f59e0b;padding:8px;margin-top:0;font-size:14px" onclick="saveNumber()">💾 Save Number</button>
+<p id="savedText" style="font-size:12px;color:green;margin:3px 0"></p>
+<button class="sos-btn" onclick="sendSOS()">SOS</button>
+<p id="status" style="color:#6d28d9;font-weight:bold">Shake phone = Auto SOS</p>
+<button id="voiceBtn" class="voice-btn">🎤 Bolo - "Khatra Hai"</button>
+<button class="location-btn" onclick="shareLocation()">📍 WhatsApp Location</button>
+<button class="call-btn" onclick="callEmergencyContact()">📞 Emergency Call</button>
+<button class="fake-btn" onclick="startFakeCall()">📞 Fake Incoming Call</button>
+<button class="timer-btn" onclick="startSafetyTimer()">⏰ Safety Timer (30 min)</button>
+<p id="timerText" style="font-size:12px;color:#ec4899"></p><p id="recText" style="font-size:11px;color:red"></p>
+</div>
+<script>
+const statusText=document.getElementById('status');const input=document.getElementById('emergencyInput');const savedText=document.getElementById('savedText');const timerText=document.getElementById('timerText');const recText=document.getElementById('recText');let safetyInterval=null;let mediaRecorder=null;let audioChunks=[];
+function getEmergencyNumber(){ return localStorage.getItem("myEmergencyNumber") || ""; }
+function showSaved(){ let n=getEmergencyNumber(); if(n){ input.value=n; savedText.innerText="✅ Saved: "+n; } } showSaved();
+function saveNumber(){ let n=input.value.trim(); if(n.length<10){alert("Sahi number likho");return;} localStorage.setItem("myEmergencyNumber",n); savedText.innerText="✅ Saved: "+n; bolna("Number save ho gaya"); }
+function bolna(text,next=null){try{window.speechSynthesis.cancel();setTimeout(()=>{let a=new SpeechSynthesisUtterance(text);a.volume=1;a.rate=0.9;let voices=window.speechSynthesis.getVoices();let best=voices.find(v=>v.lang.toLowerCase().includes('ur'))||voices.find(v=>v.lang.toLowerCase().includes('hi'))||voices.find(v=>v.lang.toLowerCase().includes('en'))||voices[0];if(best){a.voice=best;a.lang=best.lang;}else{a.lang='hi-IN';}if(next)a.onend=next;statusText.innerText="🔊 "+text;window.speechSynthesis.speak(a);},150);}catch(e){if(next)next();}}
+async function startRecording(){try{let stream=await navigator.mediaDevices.getUserMedia({audio:true});mediaRecorder=new MediaRecorder(stream);audioChunks=[];mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);mediaRecorder.onstop=()=>{let blob=new Blob(audioChunks,{type:'audio/webm'});let url=URL.createObjectURL(blob);recText.innerHTML=`🎙️ Evidence: <a href="${url}" download="evidence.webm">Download</a>`;};mediaRecorder.start();recText.innerText="🔴 Recording 30 sec...";setTimeout(()=>{if(mediaRecorder&&mediaRecorder.state=='recording')mediaRecorder.stop();},30000);}catch(err){recText.innerText="Mic allow nahi hai";}}
+function sendSOS(){statusText.innerText="🚨 SOS + Recording!";bolna("Khatra samajh gayi, recording shuru, 15 pe call kar rahi hun",()=>{startRecording();window.location.href="tel:15";});}
+function shareLocation(){let num=getEmergencyNumber();if(!num){alert("Pehle emergency number save karo");return;}bolna("Location dhoondh rahi hun");navigator.geolocation.getCurrentPosition(p=>{let lat=p.coords.latitude;let lon=p.coords.longitude;let mapLink=`https://www.google.com/maps?q=${lat},${lon}`;let msg=`🚨 HELP! Main yahan hun: ${mapLink}`;let cleanNum=num.replace(/\D/g,'');if(cleanNum.startsWith('0'))cleanNum='92'+cleanNum.substring(1);if(!cleanNum.startsWith('92'))cleanNum='92'+cleanNum;window.location.href=`https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msg)}`;},()=>{alert("Location ON karo");});}
+function callEmergencyContact(){let num=getEmergencyNumber();if(!num){alert("Pehle number save karo");return;}location.href="tel:"+num;}
+function startFakeCall(){bolna("Papa ki fake call a rahi hai");document.getElementById('fakeCallScreen').style.display='flex';}
+function endFakeCall(){document.getElementById('fakeCallScreen').style.display='none';bolna("Fake call khatam");}
+function startSafetyTimer(){let timeLeft=30*60;bolna("Safety timer 30 minute ke liye start");timerText.innerText="⏰ Timer: 30:00";if(safetyInterval)clearInterval(safetyInterval);safetyInterval=setInterval(()=>{timeLeft--;let m=Math.floor(timeLeft/60);let s=timeLeft%60;timerText.innerText=`⏰ Timer: ${m}:${s.toString().padStart(2,'0')} - Safe ho to cancel karo`;if(timeLeft<=0){clearInterval(safetyInterval);shareLocation();}},1000);timerText.innerHTML+=`<br><button onclick="clearInterval(safetyInterval); timerText.innerText='✅ Safe Marked'; bolna('Shukar hai aap safe hain')" style="margin-top:5px;background:#10b981;color:white;border:none;padding:5px 10px;border-radius:10px">I Am Safe - Cancel</button>`;}
+let lastShake=0;if(window.DeviceMotionEvent){window.addEventListener('devicemotion',e=>{let acc=e.accelerationIncludingGravity;let force=Math.abs(acc.x)+Math.abs(acc.y)+Math.abs(acc.z);if(force>55){let now=Date.now();if(now-lastShake>3000){lastShake=now;if(confirm("Shake detected! SOS bhejun?"))sendSOS();}}});}
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec;if(SR){rec=new SR();rec.lang='ur-PK';rec.continuous=false;rec.onresult=e=>{let b=e.results[0][0].transcript.toLowerCase().trim();if(b.includes("khatra")||b.includes("help")||b.includes("sos")||b.includes("bachao"))sendSOS();else if(b.includes("call"))callEmergencyContact();else if(b.includes("location"))shareLocation();else if(b.includes("fake"))startFakeCall();};}
+document.getElementById('startScreen').addEventListener('click',function(){this.style.display='none';window.speechSynthesis.getVoices();setTimeout(()=>{bolna("SafeWalk Pro tayyar hai, shake, fake call aur timer active hain");},400);});
+document.getElementById('voiceBtn').addEventListener('click',()=>{try{rec.start();}catch(e){}});
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}
+</script>
+</body>
+</html>
