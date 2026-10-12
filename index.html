@@ -40,14 +40,14 @@ button{width:100%;padding:12px;border:none;border-radius:12px;font-weight:bold;c
 <h3>🆘 Emergency Help</h3>
 <button class="btn-sos" onclick="sendSOS()">SOS - Police 15</button>
 <button class="btn-location" onclick="shareLocation()">📍 Location WhatsApp</button>
-<button class="btn-fake" onclick="startFakeCall()">📞 Fake Call (No Voice)</button>
+<button class="btn-fake" onclick="startFakeCall()">📞 Papa ki Call</button>
 <p id="status" style="text-align:center;margin-top:10px"></p>
 </div>
 </div>
 
 <div id="fakeScreen">
-<h2 style="font-size:30px">📞 Ammi Calling...</h2>
-<p style="margin:20px">Ringing...</p>
+<h2 style="font-size:30px">📞 Papa ki Call Aa Rahi Hai...</h2>
+<p style="margin:20px">Baba Jaan 👨 Ringing...</p>
 <audio id="ringtone" loop><source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 <button onclick="endFakeCall()" style="width:200px;background:red;color:white;padding:15px;border-radius:30px;margin-top:30px">Call Cut</button>
 </div>
@@ -94,6 +94,10 @@ function shareLocation(){
 function startFakeCall(){
  document.getElementById('fakeScreen').style.display='flex';
  document.getElementById('ringtone').play().catch(()=>{});
+ let msg = new SpeechSynthesisUtterance("Papa ki call aa rahi hai");
+ msg.lang = 'ur-PK';
+ msg.rate = 0.9;
+ speechSynthesis.speak(msg);
 }
 function endFakeCall(){
  document.getElementById('fakeScreen').style.display='none';
