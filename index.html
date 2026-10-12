@@ -26,7 +26,6 @@ button{width:100%;padding:12px;border:none;border-radius:12px;font-weight:bold;c
 <body>
 <div class="container">
 <h1>🌸 SafeWalk</h1>
-
 <div class="card">
 <h3>🚨 Emergency Contacts (3)</h3>
 <input id="nameInput" placeholder="Naam (Ammi)">
@@ -35,7 +34,6 @@ button{width:100%;padding:12px;border:none;border-radius:12px;font-weight:bold;c
 <div id="contactList"></div>
 <p id="msg" style="color:green;text-align:center"></p>
 </div>
-
 <div class="card">
 <h3>🆘 Emergency Help</h3>
 <button class="btn-sos" onclick="sendSOS()">SOS - Police 15</button>
@@ -44,18 +42,15 @@ button{width:100%;padding:12px;border:none;border-radius:12px;font-weight:bold;c
 <p id="status" style="text-align:center;margin-top:10px"></p>
 </div>
 </div>
-
 <div id="fakeScreen">
 <h2 style="font-size:30px">📞 Papa ki Call Aa Rahi Hai...</h2>
 <p style="margin:20px">Baba Jaan 👨 Ringing...</p>
 <audio id="ringtone" loop><source src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"></audio>
 <button onclick="endFakeCall()" style="width:200px;background:red;color:white;padding:15px;border-radius:30px;margin-top:30px">Call Cut</button>
 </div>
-
 <script>
 let contacts = JSON.parse(localStorage.getItem('safeContacts') || '[]');
 let primaryIndex = parseInt(localStorage.getItem('primaryIndex') || '0');
-
 function saveContact(){
  let name=document.getElementById('nameInput').value.trim();
  let number=document.getElementById('numberInput').value.trim();
