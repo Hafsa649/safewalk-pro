@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SafeWalk - Women Safety</title>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#be185d">
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
 body{background:#fdf2f8;min-height:100vh;padding:20px}
@@ -100,7 +102,6 @@ function endFakeCall(){
  speechSynthesis.cancel();
 }
 showContacts();
-if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(r=>r.forEach(reg=>reg.unregister()));}
 </script>
 </body>
 </html>
