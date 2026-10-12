@@ -13,42 +13,135 @@ h1{color:#6d28d9}.sos-btn{width:160px;height:160px;background:#ef4444;border-rad
 .voice-btn,.location-btn,.call-btn,.fake-btn,.timer-btn{width:100%;color:white;border:none;padding:13px;border-radius:14px;font-weight:bold;margin-top:10px;font-size:15px;cursor:pointer}
 .voice-btn{background:#7c3aed}.location-btn{background:#8b5cf6}.call-btn{background:#10b981}.fake-btn{background:#f59e0b}.timer-btn{background:#ec4899}
 .input-box{width:100%;padding:12px;border:2px solid #e9d5ff;border-radius:10px;text-align:center;margin-bottom:5px;box-sizing:border-box}
+.contact-row{display:flex;gap:6px;align-items:center;margin-bottom:8px}
+.contact-row.input-box{margin-bottom:0;text-align:left}
+.primary-label{font-size:12px;white-space:nowrap;display:flex;align-items:center;gap:3px;cursor:pointer}
 #fakeCallScreen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#111;color:white;z-index:10000;flex-direction:column;justify-content:center;align-items:center}
 </style>
 </head>
 <body>
 <button id="startScreen">💜 SafeWalk Pro Tap Karein<br><span style="font-size:16px">App Bolna Shuru Karegi 🎤</span></button>
-<div id="fakeCallScreen"><p>Incoming Call...</p><h2>👮 Papa Jaan</h2><p style="font-size:80px">📞</p><div style="display:flex;gap:40px"><button onclick="endFakeCall()" style="background:#ef4444;width:70px;height:70px;border-radius:50%;border:none;font-size:30px">📵</button><button onclick="endFakeCall()" style="background:#10b981;width:70px;height:70px;border-radius:50%;border:none;font-size:30px">📞</button></div></div>
+<div id="fakeCallScreen"><p id="fakeCallSub">Incoming Call...</p><h2 id="fakeCaller">👮 Papa Jaan</h2><p style="font-size:80px">📞</p><div style="display:flex;gap:40px"><button onclick="endFakeCall(false)" style="background:#ef4444;width:70px;height:70px;border-radius:50%;border:none;font-size:30px">📵</button><button onclick="endFakeCall(true)" style="background:#10b981;width:70px;height:70px;border-radius:50%;border:none;font-size:30px">📞</button></div><p id="fakeTalk" style="margin-top:20px;font-size:14px;display:none;color:#a3e635">Call connected... "Haan beta kahan ho? Me 2 min me pohanch rahi hun"</p></div>
 <div class="card">
 <h1>SafeWalk Pro 💜</h1><p>Women Safety - Advanced</p>
-<input id="emergencyInput" class="input-box" type="tel" placeholder="Emergency Number: 0300xxxxxxx">
-<button class="location-btn" style="background:#f59e0b;padding:8px;margin-top:0;font-size:14px" onclick="saveNumber()">💾 Save Number</button>
-<p id="savedText" style="font-size:12px;color:green;margin:3px 0"></p>
+<div style="text-align:left;background:#faf5ff;padding:12px;border-radius:15px;margin-bottom:10px">
+<p style="margin:0 0 8px 0;font-weight:bold;font-size:14px;color:#6d28d9">📋 Emergency Contacts (3)</p>
+<div class="contact-row">
+<input id="contact1" class="input-box" type="tel" placeholder="1. Ammi - 0300...">
+<label class="primary-label"><input type="radio" name="primary" value="1" checked> Primary</label>
+</div>
+<div class="contact-row">
+<input id="contact2" class="input-box" type="tel" placeholder="2. Abbu - 0300...">
+<label class="primary-label"><input type="radio" name="primary" value="2"> Primary</label>
+</div>
+<div class="contact-row">
+<input id="contact3" class="input-box" type="tel" placeholder="3. Bhai - 0300...">
+<label class="primary-label"><input type="radio" name="primary" value="3"> Primary</label>
+</div>
+<button class="location-btn" style="background:#f59e0b;padding:8px;margin-top:8px;font-size:14px" onclick="saveContacts()">💾 Save 3 Numbers</button>
+<p id="savedText" style="font-size:12px;color:green;margin:5px 0 0 0"></p>
+</div>
 <button class="sos-btn" onclick="sendSOS()">SOS</button>
 <p id="status" style="color:#6d28d9;font-weight:bold">Shake phone = Auto SOS</p>
 <button id="voiceBtn" class="voice-btn">🎤 Bolo - "Khatra Hai"</button>
 <button class="location-btn" onclick="shareLocation()">📍 WhatsApp Location</button>
-<button class="call-btn" onclick="callEmergencyContact()">📞 Emergency Call</button>
+<button class="call-btn" onclick="callEmergencyContact()">📞 Emergency Call (Primary)</button>
 <button class="fake-btn" onclick="startFakeCall()">📞 Fake Incoming Call</button>
 <button class="timer-btn" onclick="startSafetyTimer()">⏰ Safety Timer (30 min)</button>
 <p id="timerText" style="font-size:12px;color:#ec4899"></p><p id="recText" style="font-size:11px;color:red"></p>
 </div>
 <script>
-const statusText=document.getElementById('status');const input=document.getElementById('emergencyInput');const savedText=document.getElementById('savedText');const timerText=document.getElementById('timerText');const recText=document.getElementById('recText');let safetyInterval=null;let mediaRecorder=null;let audioChunks=[];
-function getEmergencyNumber(){ return localStorage.getItem("myEmergencyNumber") || ""; }
-function showSaved(){ let n=getEmergencyNumber(); if(n){ input.value=n; savedText.innerText="✅ Saved: "+n; } } showSaved();
-function saveNumber(){ let n=input.value.trim(); if(n.length<10){alert("Sahi number likho");return;} localStorage.setItem("myEmergencyNumber",n); savedText.innerText="✅ Saved: "+n; bolna("Number save ho gaya"); }
+const statusText=document.getElementById('status');const savedText=document.getElementById('savedText');const timerText=document.getElementById('timerText');const recText=document.getElementById('recText');let safetyInterval=null;let mediaRecorder=null;let audioChunks=[];let fakeRingtone=null;
+function getContacts(){ try{ return JSON.parse(localStorage.getItem("safeWalkContacts")||"[]"); }catch(e){return []} }
+function getPrimaryNumber(){
+  let contacts=getContacts();
+  if(contacts.length===0) return "";
+  let primary=contacts.find(c=>c.isPrimary);
+  if(primary && primary.number) return primary.number;
+  return contacts[0]?.number || "";
+}
+function showSaved(){
+  let contacts=getContacts();
+  if(contacts.length>0){
+    if(document.getElementById('contact1')) document.getElementById('contact1').value=contacts[0]?.number||"";
+    if(document.getElementById('contact2')) document.getElementById('contact2').value=contacts[1]?.number||"";
+    if(document.getElementById('contact3')) document.getElementById('contact3').value=contacts[2]?.number||"";
+    let primaryIndex = contacts.findIndex(c=>c.isPrimary);
+    if(primaryIndex>=0) document.querySelectorAll('input[name="primary"]')[primaryIndex].checked=true;
+    let primaryNum=getPrimaryNumber();
+    savedText.innerText="✅ Saved: "+contacts.map(c=>c.number).filter(Boolean).join(", ")+" | Primary: "+primaryNum;
+  }
+}
+showSaved();
+function saveContacts(){
+  let n1=document.getElementById('contact1').value.trim();
+  let n2=document.getElementById('contact2').value.trim();
+  let n3=document.getElementById('contact3').value.trim();
+  if(!n1 &&!n2 &&!n3){ alert("Kam se kam 1 number to likho"); return; }
+  let primaryVal=document.querySelector('input[name="primary"]:checked').value;
+  let contacts=[
+    {number:n1, isPrimary: primaryVal=='1'},
+    {number:n2, isPrimary: primaryVal=='2'},
+    {number:n3, isPrimary: primaryVal=='3'}
+  ];
+  localStorage.setItem("safeWalkContacts", JSON.stringify(contacts));
+  let primaryNum=getPrimaryNumber();
+  if(primaryNum) localStorage.setItem("myEmergencyNumber", primaryNum);
+  showSaved();
+  bolna("Teeno numbers save ho gaye, primary number set hai");
+}
 function bolna(text,next=null){try{window.speechSynthesis.cancel();setTimeout(()=>{let a=new SpeechSynthesisUtterance(text);a.volume=1;a.rate=0.9;let voices=window.speechSynthesis.getVoices();let best=voices.find(v=>v.lang.toLowerCase().includes('ur'))||voices.find(v=>v.lang.toLowerCase().includes('hi'))||voices.find(v=>v.lang.toLowerCase().includes('en'))||voices[0];if(best){a.voice=best;a.lang=best.lang;}else{a.lang='hi-IN';}if(next)a.onend=next;statusText.innerText="🔊 "+text;window.speechSynthesis.speak(a);},150);}catch(e){if(next)next();}}
 async function startRecording(){try{let stream=await navigator.mediaDevices.getUserMedia({audio:true});mediaRecorder=new MediaRecorder(stream);audioChunks=[];mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);mediaRecorder.onstop=()=>{let blob=new Blob(audioChunks,{type:'audio/webm'});let url=URL.createObjectURL(blob);recText.innerHTML=`🎙️ Evidence: <a href="${url}" download="evidence.webm">Download</a>`;};mediaRecorder.start();recText.innerText="🔴 Recording 30 sec...";setTimeout(()=>{if(mediaRecorder&&mediaRecorder.state=='recording')mediaRecorder.stop();},30000);}catch(err){recText.innerText="Mic allow nahi hai";}}
 function sendSOS(){statusText.innerText="🚨 SOS + Recording!";bolna("Khatra samajh gayi, recording shuru, 15 pe call kar rahi hun",()=>{startRecording();window.location.href="tel:15";});}
-function shareLocation(){let num=getEmergencyNumber();if(!num){alert("Pehle emergency number save karo");return;}bolna("Location dhoondh rahi hun");navigator.geolocation.getCurrentPosition(p=>{let lat=p.coords.latitude;let lon=p.coords.longitude;let mapLink=`https://www.google.com/maps?q=${lat},${lon}`;let msg=`🚨 HELP! Main yahan hun: ${mapLink}`;let cleanNum=num.replace(/\D/g,'');if(cleanNum.startsWith('0'))cleanNum='92'+cleanNum.substring(1);if(!cleanNum.startsWith('92'))cleanNum='92'+cleanNum;window.location.href=`https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msg)}`;},()=>{alert("Location ON karo");});}
-function callEmergencyContact(){let num=getEmergencyNumber();if(!num){alert("Pehle number save karo");return;}location.href="tel:"+num;}
-function startFakeCall(){bolna("Papa ki fake call a rahi hai");document.getElementById('fakeCallScreen').style.display='flex';}
-function endFakeCall(){document.getElementById('fakeCallScreen').style.display='none';bolna("Fake call khatam");}
+function shareLocation(){
+  let num=getPrimaryNumber();
+  if(!num){alert("Pehle emergency number save karo");return;}
+  bolna("Location dhoondh rahi hun");
+  navigator.geolocation.getCurrentPosition(p=>{
+    let lat=p.coords.latitude;let lon=p.coords.longitude;
+    let mapLink=`https://www.google.com/maps?q=${lat},${lon}`;
+    let msg=`🚨 HELP! Main yahan hun: ${mapLink}`;
+    let cleanNum=num.replace(/\D/g,'');
+    if(cleanNum.startsWith('0')) cleanNum='92'+cleanNum.substring(1);
+    if(!cleanNum.startsWith('92')) cleanNum='92'+cleanNum;
+    window.location.href=`https://api.whatsapp.com/send?phone=${cleanNum}&text=${encodeURIComponent(msg)}`;
+  },()=>{alert("Location ON karo");});
+}
+function callEmergencyContact(){
+  let num=getPrimaryNumber();
+  if(!num){alert("Pehle number save karo aur Primary select karo");return;}
+  location.href="tel:"+num;
+}
+function startFakeCall(){
+  if(navigator.vibrate) navigator.vibrate([400,200,400,200,800]);
+  try{
+    const AudioContext=window.AudioContext||window.webkitAudioContext;
+    if(AudioContext){
+      let ctx=new AudioContext();
+      let osc=ctx.createOscillator();
+      osc.type='sine'; osc.frequency.value=800;
+      osc.connect(ctx.destination);
+      osc.start();
+      setTimeout(()=>{osc.stop();},2000);
+    }
+  }catch(e){}
+  document.getElementById('fakeCallScreen').style.display='flex';
+  document.getElementById('fakeTalk').style.display='none';
+  document.getElementById('fakeCaller').innerText="👮 Papa Jaan";
+}
+function endFakeCall(answered){
+  document.getElementById('fakeCallScreen').style.display='none';
+  if(navigator.vibrate) navigator.vibrate(0);
+  if(answered){
+    document.getElementById('fakeTalk').style.display='block';
+    setTimeout(()=>{document.getElementById('fakeCallScreen').style.display='none';},4000);
+    statusText.innerText="✅ Fake call answered - Act as if talking";
+  }
+}
 function startSafetyTimer(){let timeLeft=30*60;bolna("Safety timer 30 minute ke liye start");timerText.innerText="⏰ Timer: 30:00";if(safetyInterval)clearInterval(safetyInterval);safetyInterval=setInterval(()=>{timeLeft--;let m=Math.floor(timeLeft/60);let s=timeLeft%60;timerText.innerText=`⏰ Timer: ${m}:${s.toString().padStart(2,'0')} - Safe ho to cancel karo`;if(timeLeft<=0){clearInterval(safetyInterval);shareLocation();}},1000);timerText.innerHTML+=`<br><button onclick="clearInterval(safetyInterval); timerText.innerText='✅ Safe Marked'; bolna('Shukar hai aap safe hain')" style="margin-top:5px;background:#10b981;color:white;border:none;padding:5px 10px;border-radius:10px">I Am Safe - Cancel</button>`;}
 let lastShake=0;if(window.DeviceMotionEvent){window.addEventListener('devicemotion',e=>{let acc=e.accelerationIncludingGravity;let force=Math.abs(acc.x)+Math.abs(acc.y)+Math.abs(acc.z);if(force>55){let now=Date.now();if(now-lastShake>3000){lastShake=now;if(confirm("Shake detected! SOS bhejun?"))sendSOS();}}});}
 const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec;if(SR){rec=new SR();rec.lang='ur-PK';rec.continuous=false;rec.onresult=e=>{let b=e.results[0][0].transcript.toLowerCase().trim();if(b.includes("khatra")||b.includes("help")||b.includes("sos")||b.includes("bachao"))sendSOS();else if(b.includes("call"))callEmergencyContact();else if(b.includes("location"))shareLocation();else if(b.includes("fake"))startFakeCall();};}
-document.getElementById('startScreen').addEventListener('click',function(){this.style.display='none';window.speechSynthesis.getVoices();setTimeout(()=>{bolna("SafeWalk Pro tayyar hai, shake, fake call aur timer active hain");},400);});
+document.getElementById('startScreen').addEventListener('click',function(){this.style.display='none';window.speechSynthesis.getVoices();setTimeout(()=>{bolna("SafeWalk Pro tayyar hai, teen numbers aur primary active hain");},400);});
 document.getElementById('voiceBtn').addEventListener('click',()=>{try{rec.start();}catch(e){}});
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}
 </script>
